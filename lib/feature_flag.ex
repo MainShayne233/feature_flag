@@ -77,7 +77,7 @@ defmodule FeatureFlag do
   @spec __using__([]) :: Macro.t()
   defmacro __using__(_) do
     quote do
-      import FeatureFlag, only: [def: 3]
+      import FeatureFlag, only: [def: 3, defp: 3]
     end
   end
 
@@ -104,17 +104,34 @@ defmodule FeatureFlag do
 
       FeatureFlag.set({MyApp, :math, 2}, :multiply)
   """
-  @spec def(func :: Macro.t(), feature_flag :: Macro.t(), expression :: Macro.t()) ::
+  @spec def(Macro.t(), Macro.t(), Macro.t()) ::
           Macro.t() | no_return()
-  defmacro def(func, {:feature_flag, _, _}, expr) do
-    {function_name, _, params} = with {:when, _, [head | _]} <- func, do: head
-    mfa = {__CALLER__.module, function_name, length(params)}
-    {case_expr, case_type} = case_expr(expr)
+  defmacro def(head, {:feature_flag, _, _}, expr) do
+    parse_and_define(:def, __CALLER__.module, head, expr)
+  end
+
+  defmacro def(_func, _flag, _expr), do: raise_compile_error(:def, "head")
+
+  @doc """
+  The same as FeatureFlag.def/3, but for private functions.
+  """
+  @spec defp(Macro.t(), Macro.t(), Macro.t()) ::
+          Macro.t() | no_return()
+  defmacro defp(head, {:feature_flag, _, _}, expr) do
+    parse_and_define(:defp, __CALLER__.module, head, expr)
+  end
+
+  defmacro defp(_func, _flag, _expr), do: raise_compile_error(:defp, "head")
+
+  defp parse_and_define(def_type, module, head, expr) do
+    {function_name, _, params} = with {:when, _, [inner_head | _]} <- head, do: inner_head
+    mfa = {module, function_name, length(params)}
+    {case_expr, case_type} = case_expr(def_type, expr)
 
     definition = %Definition{
-      def_type: :def,
+      def_type: def_type,
       mfa: mfa,
-      head: func,
+      head: head,
       case_type: case_type,
       case_expr: case_expr
     }
@@ -123,8 +140,6 @@ defmodule FeatureFlag do
 
     define(definition)
   end
-
-  defmacro def(_func, _flag, _expr), do: raise_compile_error("head")
 
   @doc """
   Returns the current feature flag value for the given function.
@@ -148,23 +163,36 @@ defmodule FeatureFlag do
   defp get_flags!, do: Application.fetch_env!(__MODULE__, :flags)
 
   @spec define(Definition.t()) :: Macro.t()
-  defp define(%Definition{mfa: mfa, head: head, case_expr: case_expr} = definition) do
-    quote do
-      def unquote(head) do
+  defp define(
+         %Definition{def_type: def_type, mfa: mfa, head: head, case_expr: case_expr} = definition
+       ) do
+    do_expr =
+      quote do
         case FeatureFlag.get(unquote(Macro.escape(mfa))) do
           unquote(case_expr)
         end
-      rescue
+      end
+
+    rescue_expr =
+      quote do
         error in CaseClauseError ->
           raise FeatureFlag.MatchError.new(unquote(Macro.escape(definition)), error)
       end
+
+    case def_type do
+      :def ->
+        quote(do: def(unquote(head), do: unquote(do_expr), rescue: unquote(rescue_expr)))
+
+      :defp ->
+        quote(do: defp(unquote(head), do: unquote(do_expr), rescue: unquote(rescue_expr)))
     end
   end
 
-  @spec case_expr(Keyword.t()) :: {Macro.t(), :case | :do_else} | no_return()
-  defp case_expr(do: [{:->, _, _} | _] = case_expr), do: {case_expr, :match}
+  @spec case_expr(Definition.def_type(), Keyword.t()) ::
+          {Macro.t(), :case | :do_else} | no_return()
+  defp case_expr(_def_type, do: [{:->, _, _} | _] = case_expr), do: {case_expr, :match}
 
-  defp case_expr(do: do_block, else: else_block) do
+  defp case_expr(_def_type, do: do_block, else: else_block) do
     case_expr =
       quote do
         true -> unquote(do_block)
@@ -174,7 +202,7 @@ defmodule FeatureFlag do
     {case_expr, :do_else}
   end
 
-  defp case_expr(_), do: raise_compile_error("body")
+  defp case_expr(def_type, _), do: raise_compile_error(def_type, "body")
 
   @spec ensure_configuration_is_set!(Definition.t()) :: :ok | no_return()
   defp ensure_configuration_is_set!(%Definition{mfa: mfa} = definition) do
@@ -205,26 +233,26 @@ defmodule FeatureFlag do
     end
   end
 
-  @spec raise_compile_error(String.t()) :: no_return()
-  defp raise_compile_error(part_of_function) do
+  @spec raise_compile_error(Definition.def_type(), String.t()) :: no_return()
+  defp raise_compile_error(def_type, part_of_function) do
     raise CompileError,
       description: """
 
 
-      It looks like you were trying to use def/3 to define a feature flag'd function, but the function #{
+      It looks like you were trying to use #{def_type}/3 to define a feature flag'd function, but the function #{
         part_of_function
       } isn't quite right.
 
       The function definition should look something like:
 
-      def function_name(arg1, arg2), feature_flag do
+      #{def_type} function_name(arg1, arg2), feature_flag do
         :a -> ...
         :b -> ...
       end
 
       or
 
-      def function_name(arg1, arg2), feature_flag do
+      #{def_type} function_name(arg1, arg2), feature_flag do
         ...
       else
         ...
