@@ -10,15 +10,12 @@ defmodule FeatureFlag do
 
   This could very easily be done in plain Elixir via a simple `case` statement:
 
-      def MyApp do
-
-        def get(key) do
-          case Application.get_env(MyApp, :store_type) do
-            :cache ->
-              get_from_cache(key)
-
-            :database ->
-              get_from_database(key)
+      defmodule MyApp do
+        def math(x, y) do
+          case Application.get_env(:my_app, :math) do
+            :add -> x + y
+            :multiply -> x * y
+            :subtract x - y
           end
         end
       end
@@ -27,19 +24,15 @@ defmodule FeatureFlag do
 
   However, the same code can be rewritten as such using `FeatureFlag`
 
-      def MyApp do
-        use FeatureFlag
-
-        def get(key), feature_flag do
-          :cache ->
-            get_from_cache(key)
-
-          :database ->
-            get_from_database(key)
-        end
+    defmodule MyApp do
+      def math(x, y), feature_flag do
+        :add -> x + y
+        :multiply -> x * y
+        :subtract x - y
       end
+    end
 
-  When called, each case will attempt to match on the current value of `Application.get_env(:feature_flag, {MyApp, :get, 1})`.
+  When called, each case will attempt to match on the current value of `Application.get_env(:feature_flag, {MyApp, :math, 2})`.
 
   Beyond removing a marginal amount of code, `FeatureFlag` provides a consistent interface for defining functions with config-based branching.
   """

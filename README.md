@@ -1,6 +1,6 @@
 # FeatureFlag
 
-[![Hex Version](http://img.shields.io/hexpm/v/executor.svg?style=flat)](https://hex.pm/packages/executor)
+[![Hex Version](http://img.shields.io/hexpm/v/executor.svg?style=flat)](https://hex.pm/packages/feature_flag)
 
 
 `FeatureFlag` provides a macro that allows for conditional branching at the function level via configuration values.
@@ -14,15 +14,12 @@ The goal of this library was to provide an elegant and consistent mechanism for 
 This could very easily be done in plain Elixir via a simple `case` statement:
 
 ```elixir
-def MyApp do
-
-  def get(key) do
-    case Application.get_env(MyApp, :store_type) do
-      :cache ->
-        get_from_cache(key)
-        
-      :database ->
-        get_from_database(key)
+defmodule MyApp do
+  def math(x, y) do
+    case Application.get_env(:my_app, :math) do
+      :add -> x + y
+      :multiply -> x * y
+      :subtract x - y
     end
   end
 end
@@ -33,20 +30,16 @@ There's nothing wrong with this approach, and really no need to reach for anythi
 However, the same code can be rewritten as such using `FeatureFlag`
 
 ```elixir
-def MyApp do
-  use FeatureFlag
-
-  def get(key), feature_flag do
-    :cache ->
-      get_from_cache(key)
-      
-    :database ->
-      get_from_database(key)
+defmodule MyApp do
+  def math(x, y), feature_flag do
+    :add -> x + y
+    :multiply -> x * y
+    :subtract x - y
   end
 end
 ```
 
-When called, each case will attempt to match on the current value of `Application.get_env(:feature_flag, {MyApp, :get, 1})`.
+When called, each case will attempt to match on the current value of `Application.get_env(:feature_flag, {MyApp, :math, 2})`.
 
 Beyond removing a marginal amount of code, `FeatureFlag` provides a consistent interface for defining functions with config-based branching.
 
@@ -57,7 +50,7 @@ Add FeatureFlag as a dependency in your `mix.exs` file.
 ```elixir
 def deps do
   [
-    {:feature_flag, "~> 0.0.2"}
+    {:feature_flag, "~> 0.0.3"}
   ]
 end
 ```
