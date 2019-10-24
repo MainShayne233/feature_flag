@@ -13,10 +13,8 @@ defmodule FeatureFlag.MixProject do
   end
 
   defp description,
-    do: """
-    A library that provides a macro for defining functions that's procedures can be
-    changed via configuration values.
-    """
+    do:
+      "A succinct and consistent interface for defining control-flow of functions via configuration."
 
   defp package do
     [
