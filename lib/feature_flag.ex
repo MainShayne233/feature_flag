@@ -14,6 +14,14 @@ defmodule FeatureFlag do
 
   defmacro def(_func, _flag, _expr), do: raise_compile_error("head")
 
+  def get(name) do
+    Application.get_env(__MODULE__, name)
+  end
+
+  def set(name, value) do
+    Application.put_env(__MODULE__, name, value)
+  end
+
   defp do_def(name, func, expr) do
     {case_block, case_type} = case_block(expr)
 
@@ -38,14 +46,6 @@ defmodule FeatureFlag do
                 )
       end
     end
-  end
-
-  def get(name) do
-    Application.get_env(__MODULE__, name)
-  end
-
-  def set(name, value) do
-    Application.put_env(__MODULE__, name, value)
   end
 
   defp case_block(do: [{:->, _, _} | _] = case_block), do: {case_block, :case}
