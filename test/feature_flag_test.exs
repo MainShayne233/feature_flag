@@ -3,6 +3,8 @@ defmodule FeatureFlagTest do
 
   describe "def/3" do
     test "should allow for a mutli-case definition" do
+      FeatureFlag.set({FeatureFlagTest.MyApp.A, :math, 1}, :double)
+
       defmodule MyApp.A do
         use FeatureFlag
 
@@ -25,6 +27,8 @@ defmodule FeatureFlagTest do
     end
 
     test "should allow for a do/else definition" do
+      FeatureFlag.set({FeatureFlagTest.MyApp.B, :maybe_reverse_string, 1}, true)
+
       defmodule MyApp.B do
         use FeatureFlag
 
@@ -35,7 +39,6 @@ defmodule FeatureFlagTest do
         end
       end
 
-      FeatureFlag.set({MyApp.B, :maybe_reverse_string, 1}, true)
       assert MyApp.B.maybe_reverse_string("hello") == "olleh"
 
       FeatureFlag.set({MyApp.B, :maybe_reverse_string, 1}, false)
@@ -43,6 +46,8 @@ defmodule FeatureFlagTest do
     end
 
     test "should raise a helpful error when feature flag's value isn't matched on" do
+      FeatureFlag.set({FeatureFlagTest.MyApp.C, :math, 1}, :quadruple)
+
       defmodule MyApp.C do
         use FeatureFlag
 
@@ -52,8 +57,6 @@ defmodule FeatureFlagTest do
           :mod_5 -> rem(value, 5)
         end
       end
-
-      FeatureFlag.set({MyApp.C, :math, 1}, :quadruple)
 
       error =
         assert_raise(FeatureFlag.MatchError, fn ->
@@ -81,6 +84,8 @@ defmodule FeatureFlagTest do
     end
 
     test "should raise a specialized error specific to the do/else case when it is used" do
+      FeatureFlag.set({FeatureFlagTest.MyApp.D, :maybe_reverse_string, 1}, nil)
+
       defmodule MyApp.D do
         use FeatureFlag
 
@@ -90,8 +95,6 @@ defmodule FeatureFlagTest do
           value
         end
       end
-
-      FeatureFlag.set({MyApp.D, :maybe_reverse_string, 1}, nil)
 
       error =
         assert_raise(FeatureFlag.MatchError, fn ->
@@ -110,6 +113,8 @@ defmodule FeatureFlagTest do
     end
 
     test "should allow for guard clauses" do
+      FeatureFlag.set({FeatureFlagTest.MyApp.E, :math, 1}, :double)
+
       defmodule MyApp.E do
         use FeatureFlag
 
@@ -122,7 +127,6 @@ defmodule FeatureFlagTest do
         def math(_), do: :error
       end
 
-      FeatureFlag.set({MyApp.E, :math, 1}, :double)
       assert MyApp.E.math(2) == {:ok, 4}
       assert MyApp.E.math("2") == :error
     end
@@ -164,6 +168,8 @@ defmodule FeatureFlagTest do
     end
 
     test "should raise a helpful compile error if the body of the function isn't valid" do
+      FeatureFlag.set({FeatureFlagTest.MyApp.F, :math, 1}, :divide)
+
       error =
         assert_raise(CompileError, fn ->
           defmodule MyApp.F do
@@ -194,6 +200,37 @@ defmodule FeatureFlagTest do
              else
                ...
              end
+             """
+    end
+
+    test "should raise a helpful compile error if a feature flag's value isn't previousily set" do
+      error =
+        assert_raise(CompileError, fn ->
+          defmodule MyApp.G do
+            use FeatureFlag
+
+            def math(value), feature_flag do
+              :multuply -> value * 2
+              :divide -> value / 2
+            end
+          end
+        end)
+
+      assert error.description == """
+
+
+             Hm, it seems their is no feature flag value set for FeatureFlagTest.MyApp.G.math/1
+
+             This value must be set to ensure it has at least been encounted for, even if it's set to `nil`.
+
+             You can set the feature flag configuration for this particular function by adding the following to your config:
+
+                 config FeatureFlag, {FeatureFlagTest.MyApp.G, :math, 1}, :flag_value
+
+
+             The value can also be set via outside of a config file via `FeatureFlag.set/2`, like:
+
+                 FeatureFlag.set({FeatureFlagTest.MyApp.G, :math, 1}, :flag_value)
              """
     end
   end

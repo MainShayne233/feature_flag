@@ -12,7 +12,7 @@ defmodule FeatureFlag do
 
       defmodule MyApp do
         def math(x, y) do
-          case Application.get_env(:my_app, :math) do
+          case Application.fetch_env!(:my_app, :math) do
             :add -> x + y
             :multiply -> x * y
             :subtract x - y
@@ -32,7 +32,7 @@ defmodule FeatureFlag do
       end
     end
 
-  When called, each case will attempt to match on the current value of `Application.get_env(:feature_flag, {MyApp, :math, 2})`.
+  When called, each case will attempt to match on the current value of `Application.fetch_env!(:feature_flag, {MyApp, :math, 2})`.
 
   Beyond removing a marginal amount of code, `FeatureFlag` provides a consistent interface for defining functions with config-based branching.
   """
@@ -69,6 +69,7 @@ defmodule FeatureFlag do
   defmacro def(func, {:feature_flag, _, _}, expr) do
     {function_name, _, params} = with {:when, _, [head | _]} <- func, do: head
     mfa = {__CALLER__.module, function_name, length(params)}
+    ensure_configuration_is_set!(mfa)
 
     do_def(mfa, func, expr)
   end
@@ -80,7 +81,7 @@ defmodule FeatureFlag do
   """
   @spec get(mfa()) :: term()
   def get(mfa) do
-    Application.get_env(__MODULE__, mfa)
+    Application.fetch_env!(__MODULE__, mfa)
   end
 
   @doc """
@@ -131,6 +132,32 @@ defmodule FeatureFlag do
   end
 
   defp case_block(_), do: raise_compile_error("body")
+
+  defp ensure_configuration_is_set!({module, func, arity} = mfa) do
+    case Application.fetch_env(FeatureFlag, mfa) do
+      {:ok, _} ->
+        :ok
+
+      :error ->
+        raise CompileError,
+          description: """
+
+
+          Hm, it seems their is no feature flag value set for #{inspect(module)}.#{func}/#{arity}
+
+          This value must be set to ensure it has at least been encounted for, even if it's set to `nil`.
+
+          You can set the feature flag configuration for this particular function by adding the following to your config:
+
+              config FeatureFlag, #{inspect(mfa)}, :flag_value
+
+
+          The value can also be set via outside of a config file via `FeatureFlag.set/2`, like:
+
+              FeatureFlag.set(#{inspect(mfa)}, :flag_value)
+          """
+    end
+  end
 
   defp raise_compile_error(part_of_function) do
     raise CompileError,
