@@ -51,7 +51,7 @@ Add FeatureFlag as a dependency in your `mix.exs` file.
 ```elixir
 def deps do
   [
-    {:feature_flag, "~> 0.1.2"}
+    {:feature_flag, "~> 0.1.3"}
   ]
 end
 ```
