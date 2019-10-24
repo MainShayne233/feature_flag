@@ -1,12 +1,12 @@
 defmodule FeatureFlag.MatchError do
   defexception [:message]
 
-  def new(module_name, func_name, arity, expected_cases, case_type, actual) do
+  def new({module_name, func_name, arity}, expected_cases, case_type, actual) do
     %__MODULE__{
       message: """
 
 
-      I couldn't match on the feature flag value for #{module_name}.#{func_name}/#{arity}
+      I couldn't match on the feature flag value for #{inspect(module_name)}.#{func_name}/#{arity}
 
       #{expecting_message(expected_cases, case_type)}
       but instead got: #{actual}

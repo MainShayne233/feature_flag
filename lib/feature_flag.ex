@@ -12,6 +12,30 @@ defmodule FeatureFlag do
     do_def(name, func, expr)
   end
 
+  defmacro def(func, flag, expr) do
+    raise CompileError,
+      description: """
+
+
+      It looks like you were trying to use def/3 to define a feature flag'd function, but it's not quite right.
+
+      The function definition should look something like:
+
+      def function_name(arg1, arg2), feature_flag do
+        :a -> ...
+        :b -> ...
+      end
+
+      or
+
+      def function_name(arg1, arg2), feature_flag do
+        ...
+      else
+        ...
+      end
+      """
+  end
+
   defp do_def({module_name, func_name, arity} = name, func, expr) do
     {case_block, case_type} = case_block(expr)
 
@@ -29,9 +53,7 @@ defmodule FeatureFlag do
       rescue
         error in CaseClauseError ->
           raise FeatureFlag.MatchError.new(
-                  unquote(inspect(module_name)),
-                  unquote(func_name),
-                  unquote(arity),
+                  unquote(Macro.escape(name)),
                   unquote(expected_cases),
                   unquote(case_type),
                   inspect(error.term)
@@ -51,9 +73,12 @@ defmodule FeatureFlag do
   defp case_block(do: [{:->, _, _} | _] = case_block), do: {case_block, :case}
 
   defp case_block(do: do_block, else: else_block) do
-    {quote do
-       true -> unquote(do_block)
-       false -> unquote(else_block)
-     end, :do_else}
+    case_block =
+      quote do
+        true -> unquote(do_block)
+        false -> unquote(else_block)
+      end
+
+    {case_block, :do_else}
   end
 end
