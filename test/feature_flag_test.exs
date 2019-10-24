@@ -138,15 +138,47 @@ defmodule FeatureFlagTest do
               :half -> {:ok, value / 2}
               :mod_5 -> {:ok, rem(value, 5)}
             end
-
-            def math(_), do: :error
           end
         end)
 
       assert error.description == """
 
 
-             It looks like you were trying to use def/3 to define a feature flag'd function, but it's not quite right.
+             It looks like you were trying to use def/3 to define a feature flag'd function, but the function head isn't quite right.
+
+             The function definition should look something like:
+
+             def function_name(arg1, arg2), feature_flag do
+               :a -> ...
+               :b -> ...
+             end
+
+             or
+
+             def function_name(arg1, arg2), feature_flag do
+               ...
+             else
+               ...
+             end
+             """
+    end
+
+    test "should raise a helpful compile error if the body of the function isn't valid" do
+      error =
+        assert_raise(CompileError, fn ->
+          defmodule MyApp.F do
+            use FeatureFlag
+
+            def math(value) when is_number(value), feature_flag do
+              {:ok, value}
+            end
+          end
+        end)
+
+      assert error.description == """
+
+
+             It looks like you were trying to use def/3 to define a feature flag'd function, but the function body isn't quite right.
 
              The function definition should look something like:
 

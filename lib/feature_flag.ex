@@ -12,31 +12,9 @@ defmodule FeatureFlag do
     do_def(name, func, expr)
   end
 
-  defmacro def(func, flag, expr) do
-    raise CompileError,
-      description: """
+  defmacro def(_func, _flag, _expr), do: raise_compile_error("head")
 
-
-      It looks like you were trying to use def/3 to define a feature flag'd function, but it's not quite right.
-
-      The function definition should look something like:
-
-      def function_name(arg1, arg2), feature_flag do
-        :a -> ...
-        :b -> ...
-      end
-
-      or
-
-      def function_name(arg1, arg2), feature_flag do
-        ...
-      else
-        ...
-      end
-      """
-  end
-
-  defp do_def({module_name, func_name, arity} = name, func, expr) do
+  defp do_def(name, func, expr) do
     {case_block, case_type} = case_block(expr)
 
     expected_cases =
@@ -80,5 +58,33 @@ defmodule FeatureFlag do
       end
 
     {case_block, :do_else}
+  end
+
+  defp case_block(_), do: raise_compile_error("body")
+
+  defp raise_compile_error(part_of_function) do
+    raise CompileError,
+      description: """
+
+
+      It looks like you were trying to use def/3 to define a feature flag'd function, but the function #{
+        part_of_function
+      } isn't quite right.
+
+      The function definition should look something like:
+
+      def function_name(arg1, arg2), feature_flag do
+        :a -> ...
+        :b -> ...
+      end
+
+      or
+
+      def function_name(arg1, arg2), feature_flag do
+        ...
+      else
+        ...
+      end
+      """
   end
 end
