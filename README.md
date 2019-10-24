@@ -17,7 +17,7 @@ This could very easily be done in plain Elixir via a simple `case` statement:
 ```elixir
 defmodule MyApp do
   def math(x, y) do
-    case Application.get_env(:my_app, :math) do
+    case Application.fetch_env!(:my_app, :math) do
       :add -> x + y
       :multiply -> x * y
       :subtract x - y
@@ -40,7 +40,7 @@ defmodule MyApp do
 end
 ```
 
-When called, each case will attempt to match on the current value of `Application.get_env(:feature_flag, {MyApp, :math, 2})`.
+When called, each case will attempt to match on the current value of `Application.fetch_env!(:feature_flag, {MyApp, :math, 2})`.
 
 Beyond removing a marginal amount of code, `FeatureFlag` provides a consistent interface for defining functions with config-based branching.
 
@@ -99,7 +99,7 @@ else
 end
 ```
 
-The first block will get called if `Application.get_env(FeatureFlag, {MyApp, :get, 1}) == true`, and the `else` block will get called if it's `false`.
+The first block will get called if `Application.fetch_env!(FeatureFlag, {MyApp, :get, 1}) == true`, and the `else` block will get called if it's `false`.
 
 ## Mentions
 
