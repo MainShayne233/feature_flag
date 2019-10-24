@@ -6,7 +6,23 @@ defmodule FeatureFlag.MixProject do
       app: :feature_flag,
       version: "0.0.1",
       elixir: ">= 1.9.0",
-      deps: deps()
+      deps: deps(),
+      description: description(),
+      package: package()
+    ]
+  end
+
+  defp description,
+    do: """
+    A library that provides a macro for defining functions that's procedures can be
+    changed via configuration values.
+    """
+
+  defp package do
+    [
+      name: "feature_flag",
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/MainShayne233/feature_flag"}
     ]
   end
 
