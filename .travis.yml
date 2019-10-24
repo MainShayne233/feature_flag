@@ -16,6 +16,7 @@ env:
 cache:
   directories:
     - deps
+    - priv/plts
 
 jobs:
   include:

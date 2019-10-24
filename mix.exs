@@ -8,7 +8,8 @@ defmodule FeatureFlag.MixProject do
       elixir: ">= 1.9.0",
       deps: deps(),
       description: description(),
-      package: package()
+      package: package(),
+      dialyzer: dialyzer()
     ]
   end
 
@@ -28,10 +29,17 @@ defmodule FeatureFlag.MixProject do
     []
   end
 
+  defp dialyzer do
+    [
+      plt_file: {:no_warn, "priv/plts/feature_flag.plt"}
+    ]
+  end
+
   defp deps do
     [
       {:mix_test_watch, "~> 0.9.0", only: :dev, runtime: false},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false}
     ]
   end
 end
