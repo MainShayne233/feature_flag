@@ -1,4 +1,44 @@
 defmodule FeatureFlag do
+  @moduledoc """
+  `FeatureFlag` provides a macro that allows for conditional branching at the function level via configuration values.
+
+  In other words, you can change what a function does by setting/modifying a config value.
+
+  Here's a simple example:
+
+  ```defmodule MyApp
+    use FeatureFlag
+
+    def get(key), feature_flag do
+      :cache ->
+        get_from_cache(key)
+
+      :database ->
+        get_from_database(key)
+    end
+  end```
+
+  The function `MyApp.get/1` will perform different procedures depending on a config value you can set via:
+
+  `config FeatureFlag, {MyApp, :get, 1}, :cache`
+
+  or, you can set/change this value at runtime via:
+
+  `FeatureFlag.set({MyApp, :get, 1}, :database)`
+
+
+  If your function is only going to do one of two things based on a boolean feature flag, you can simplify
+  your function like so:
+
+  ```def get(key), feature_flag do
+    get_from_cache(key)
+  else
+    get_from_database(key)
+  end```
+
+  The first block will get called if `Application.get_env(FeatureFlag, {MyApp, :get, 1}) == true`, and the else block will get called if it's `false`.
+  """
+
   defmacro __using__(_) do
     quote do
       import FeatureFlag, only: [def: 3]
