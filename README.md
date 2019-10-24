@@ -1,21 +1,111 @@
 # FeatureFlag
 
-**TODO: Add description**
+[![Hex Version](http://img.shields.io/hexpm/v/executor.svg?style=flat)](https://hex.pm/packages/executor)
 
-## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `feature_flag` to your list of dependencies in `mix.exs`:
+`FeatureFlag` provides a macro that allows for conditional branching at the function level via configuration values.
+
+In other words, you can change what a function does at runtime by setting/modifying a config value.
+
+## Use Case
+
+The goal of this library was to provide an elegant mechanism for changing what a function does depending on a value that can easily be modified (i.e. a configuration value).
+
+This could very easily be done in plain Elixir via a simple `case` statement:
+
+```elixir
+def MyApp do
+
+  def get(key) do
+    case Application.get_env(MyApp, :store_type) do
+      :cache ->
+        get_from_cache(key)
+        
+      :database ->
+        get_from_database(key)
+    end
+  end
+end
+```
+
+There's nothing wrong with this approach, and really no need to reach for anything else.
+
+The same code can be rewritten as such using `FeatureFlag`
+
+```elixir
+def MyApp do
+  use FeatureFlag
+
+  def get(key), feature_flag do
+    :cache ->
+      get_from_cache(key)
+      
+    :database ->
+      get_from_database(key)
+  end
+end
+```
+
+Beyond removing a marginal amount of code, `FeatureFlag` provides a consistent interface for defining functions with config-based branching.
+
+
+## Usage
+
+Add FeatureFlag as a dependency in your `mix.exs` file.
 
 ```elixir
 def deps do
   [
-    {:feature_flag, "~> 0.1.0"}
+    {:feature_flag, "~> 0.0.2"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/feature_flag](https://hexdocs.pm/feature_flag).
+After that's done, run `mix deps.get`, and then you can define a feature flag'd function!
 
+Here's a simple example:
+
+```elixir
+defmodule MyApp
+  use FeatureFlag
+
+  def get(key), feature_flag do
+    :cache ->
+      get_from_cache(key)
+
+    :database ->
+      get_from_database(key)
+  end
+end
+```
+
+The function `MyApp.get/1` will perform different procedures depending on a config value you can set via:
+
+```elixir
+# config/{dev,test,prod}.exs
+config FeatureFlag, {MyApp, :get, 1}, :cache
+```
+
+or, you can set/change this value at runtime via:
+
+```elixir
+FeatureFlag.set({MyApp, :get, 1}, :database)
+```
+
+
+If your function is only going to do one of two things based on a boolean feature flag, you can simplify
+your function like so:
+
+```elixir
+def get(key), feature_flag do
+  get_from_cache(key)
+else
+  get_from_database(key)
+end
+```
+
+The first block will get called if `Application.get_env(FeatureFlag, {MyApp, :get, 1}) == true`, and the `else` block will get called if it's `false`.
+
+## Mentions
+
+I'd like to thank [Packlane](https://github.com/Packlane) for giving me time to work on and share this software.
