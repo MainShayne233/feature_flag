@@ -6,17 +6,17 @@ defmodule FeatureFlag do
 
   Here's a simple example:
 
-  ```defmodule MyApp
-    use FeatureFlag
+      defmodule MyApp
+        use FeatureFlag
 
-    def get(key), feature_flag do
-      :cache ->
-        get_from_cache(key)
+        def get(key), feature_flag do
+          :cache ->
+            get_from_cache(key)
 
-      :database ->
-        get_from_database(key)
-    end
-  end```
+          :database ->
+            get_from_database(key)
+        end
+      end
 
   The function `MyApp.get/1` will perform different procedures depending on a config value you can set via:
 
@@ -30,11 +30,11 @@ defmodule FeatureFlag do
   If your function is only going to do one of two things based on a boolean feature flag, you can simplify
   your function like so:
 
-  ```def get(key), feature_flag do
-    get_from_cache(key)
-  else
-    get_from_database(key)
-  end```
+      def get(key), feature_flag do
+        get_from_cache(key)
+      else
+        get_from_database(key)
+      end
 
   The first block will get called if `Application.get_env(FeatureFlag, {MyApp, :get, 1}) == true`, and the else block will get called if it's `false`.
   """

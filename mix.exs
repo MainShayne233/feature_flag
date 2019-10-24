@@ -4,7 +4,7 @@ defmodule FeatureFlag.MixProject do
   def project do
     [
       app: :feature_flag,
-      version: "0.0.1",
+      version: "0.0.2",
       elixir: ">= 1.9.0",
       deps: deps(),
       description: description(),
@@ -33,7 +33,7 @@ defmodule FeatureFlag.MixProject do
   defp deps do
     [
       {:mix_test_watch, "~> 0.9.0", only: :dev, runtime: false},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 end
