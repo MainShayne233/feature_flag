@@ -215,7 +215,7 @@ defmodule FeatureFlag do
           description: """
 
 
-          Hm, it seems their is no feature flag value set for #{
+          Hm, it seems there is no feature flag value set for #{
             Definition.to_mfa_string(definition)
           }
 

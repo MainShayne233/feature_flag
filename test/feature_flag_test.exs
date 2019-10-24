@@ -231,7 +231,7 @@ defmodule FeatureFlagTest do
       assert error.description == """
 
 
-             Hm, it seems their is no feature flag value set for FeatureFlagTest.MyApp.G.math/1
+             Hm, it seems there is no feature flag value set for FeatureFlagTest.MyApp.G.math/1
 
              This value must be set to ensure it has at least been encounted for, even if it's set to `nil`.
 
