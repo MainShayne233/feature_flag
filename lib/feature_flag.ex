@@ -1,4 +1,36 @@
 defmodule FeatureFlag do
+  defmodule Definition do
+    @moduledoc """
+    An internal struct representing a feature flag definition.
+    """
+
+    @type def_type :: :def | :defp
+    @type case_type :: :match | :do_else
+
+    @type t :: %__MODULE__{
+            def_type: def_type(),
+            mfa: mfa(),
+            head: Macro.t(),
+            case_type: case_type(),
+            case_expr: Macro.t()
+          }
+
+    @enforce_keys [:def_type, :mfa, :head, :case_type, :case_expr]
+
+    defstruct @enforce_keys
+
+    def to_mfa_string(%Definition{mfa: {module, func, arity}}) do
+      "#{inspect(module)}.#{func}/#{arity}"
+    end
+
+    def to_expected_cases_string(%Definition{case_expr: case_expr}) do
+      Enum.map(case_expr, fn {_, _, [[match] | _]} ->
+        "  " <> Macro.to_string(match) <> " ->\n    .."
+      end)
+      |> Enum.join("\n\n")
+    end
+  end
+
   @moduledoc """
   `FeatureFlag` provides a macro that allows for conditional branching at the function level via configuration values.
 
@@ -77,9 +109,19 @@ defmodule FeatureFlag do
   defmacro def(func, {:feature_flag, _, _}, expr) do
     {function_name, _, params} = with {:when, _, [head | _]} <- func, do: head
     mfa = {__CALLER__.module, function_name, length(params)}
-    :ok = ensure_configuration_is_set!(mfa)
+    {case_expr, case_type} = case_expr(expr)
 
-    do_def(mfa, func, expr)
+    definition = %Definition{
+      def_type: :def,
+      mfa: mfa,
+      head: func,
+      case_type: case_type,
+      case_expr: case_expr
+    }
+
+    :ok = ensure_configuration_is_set!(definition)
+
+    define(definition)
   end
 
   defmacro def(_func, _flag, _expr), do: raise_compile_error("head")
@@ -105,50 +147,37 @@ defmodule FeatureFlag do
   @spec get_flags! :: map() | no_return()
   defp get_flags!, do: Application.fetch_env!(__MODULE__, :flags)
 
-  @spec do_def(mfa(), Macro.t(), Macro.t()) :: Macro.t()
-  defp do_def(mfa, func, expr) do
-    {case_block, case_type} = case_block(expr)
-
-    expected_cases =
-      Enum.map(case_block, fn {_, _, [[match] | _]} ->
-        "  " <> Macro.to_string(match) <> " ->\n    .."
-      end)
-      |> Enum.join("\n\n")
-
+  @spec define(Definition.t()) :: Macro.t()
+  defp define(%Definition{mfa: mfa, head: head, case_expr: case_expr} = definition) do
     quote do
-      def unquote(func) do
+      def unquote(head) do
         case FeatureFlag.get(unquote(Macro.escape(mfa))) do
-          unquote(case_block)
+          unquote(case_expr)
         end
       rescue
         error in CaseClauseError ->
-          raise FeatureFlag.MatchError.new(
-                  unquote(Macro.escape(mfa)),
-                  unquote(expected_cases),
-                  unquote(case_type),
-                  inspect(error.term)
-                )
+          raise FeatureFlag.MatchError.new(unquote(Macro.escape(definition)), error)
       end
     end
   end
 
-  @spec case_block(Keyword.t()) :: {Macro.t(), :case | :do_else} | no_return()
-  defp case_block(do: [{:->, _, _} | _] = case_block), do: {case_block, :case}
+  @spec case_expr(Keyword.t()) :: {Macro.t(), :case | :do_else} | no_return()
+  defp case_expr(do: [{:->, _, _} | _] = case_expr), do: {case_expr, :match}
 
-  defp case_block(do: do_block, else: else_block) do
-    case_block =
+  defp case_expr(do: do_block, else: else_block) do
+    case_expr =
       quote do
         true -> unquote(do_block)
         false -> unquote(else_block)
       end
 
-    {case_block, :do_else}
+    {case_expr, :do_else}
   end
 
-  defp case_block(_), do: raise_compile_error("body")
+  defp case_expr(_), do: raise_compile_error("body")
 
-  @spec ensure_configuration_is_set!(mfa()) :: :ok | no_return()
-  defp ensure_configuration_is_set!({module, func, arity} = mfa) do
+  @spec ensure_configuration_is_set!(Definition.t()) :: :ok | no_return()
+  defp ensure_configuration_is_set!(%Definition{mfa: mfa} = definition) do
     case Application.fetch_env(FeatureFlag, :flags) do
       {:ok, %{^mfa => _}} ->
         :ok
@@ -158,7 +187,9 @@ defmodule FeatureFlag do
           description: """
 
 
-          Hm, it seems their is no feature flag value set for #{inspect(module)}.#{func}/#{arity}
+          Hm, it seems their is no feature flag value set for #{
+            Definition.to_mfa_string(definition)
+          }
 
           This value must be set to ensure it has at least been encounted for, even if it's set to `nil`.
 

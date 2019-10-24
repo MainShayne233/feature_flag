@@ -247,6 +247,31 @@ defmodule FeatureFlagTest do
     end
   end
 
+  describe "defp" do
+    @tag :skip
+    test "should allow for defp definitions" do
+      init_flags(%{
+        {FeatureFlagTest.MyApp.G, :do_math, 1} => :double
+      })
+
+      defmodule MyApp.G do
+        use FeatureFlag
+
+        def math(value), do: do_path(value)
+
+        defp do_math(value), feature_flag do
+          :double -> 2 * value
+          :half -> value / 2
+          :mod_5 -> rem(value, 5)
+          _ -> 5
+        end
+      end
+
+      FeatureFlag.set({MyApp.G, :math, 1}, :double)
+      assert MyApp.G.math(2) == 4
+    end
+  end
+
   defp init_flags(flags) do
     Application.put_env(FeatureFlag, :flags, flags)
   end
