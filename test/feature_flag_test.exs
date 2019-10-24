@@ -233,14 +233,14 @@ defmodule FeatureFlagTest do
 
              Hm, it seems there is no feature flag value set for FeatureFlagTest.MyApp.G.math/1
 
-             This value must be set to ensure it has at least been encounted for, even if it's set to `nil`.
+             This value must be set to ensure it has at least been accounted for, even if it's set to `nil`.
 
              You can set the feature flag configuration for this particular function by adding the following to your config:
 
                  config FeatureFlag, :flags, %{{FeatureFlagTest.MyApp.G, :math, 1} => :flag_value}
 
 
-             The value can also be set via outside of a config file via `FeatureFlag.set/2`, like:
+             The value can also be set outside of a config file via `FeatureFlag.set/2`, like:
 
                  FeatureFlag.set({FeatureFlagTest.MyApp.G, :math, 1}, :flag_value)
              """

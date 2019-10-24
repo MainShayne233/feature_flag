@@ -219,14 +219,14 @@ defmodule FeatureFlag do
             Definition.to_mfa_string(definition)
           }
 
-          This value must be set to ensure it has at least been encounted for, even if it's set to `nil`.
+          This value must be set to ensure it has at least been accounted for, even if it's set to `nil`.
 
           You can set the feature flag configuration for this particular function by adding the following to your config:
 
               config FeatureFlag, :flags, %{#{inspect(mfa)} => :flag_value}
 
 
-          The value can also be set via outside of a config file via `FeatureFlag.set/2`, like:
+          The value can also be set outside of a config file via `FeatureFlag.set/2`, like:
 
               FeatureFlag.set(#{inspect(mfa)}, :flag_value)
           """
