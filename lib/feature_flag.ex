@@ -5,10 +5,14 @@ defmodule FeatureFlag do
     end
   end
 
-  defmacro def({func_name, _, params} = call, {:feature_flag, _, _}, expr) do
-    module_name = __CALLER__.module
-    arity = length(params)
-    name = {module_name, func_name, arity}
+  defmacro def(func, {:feature_flag, _, _}, expr) do
+    {function_name, _, params} = with {:when, _, [head | _]} <- func, do: head
+    name = {__CALLER__.module, function_name, length(params)}
+
+    do_def(name, func, expr)
+  end
+
+  defp do_def({module_name, func_name, arity} = name, func, expr) do
     {case_block, case_type} = case_block(expr)
 
     expected_cases =
@@ -18,7 +22,7 @@ defmodule FeatureFlag do
       |> Enum.join("\n\n")
 
     quote do
-      def unquote(call) do
+      def unquote(func) do
         case FeatureFlag.get(unquote(Macro.escape(name))) do
           unquote(case_block)
         end

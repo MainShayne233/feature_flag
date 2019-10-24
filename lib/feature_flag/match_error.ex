@@ -14,13 +14,15 @@ defmodule FeatureFlag.MatchError do
     }
   end
 
-  def expecting_message(expected_cases, :case), do: """
-  I was expecting a value that'd match in the following cases:
+  def expecting_message(expected_cases, :case),
+    do: """
+    I was expecting a value that'd match in the following cases:
 
-  #{expected_cases}
-  """
+    #{expected_cases}
+    """
 
-  def expecting_message(expected_cases, :do_else), do: """
-  I was expecting either true or false
-  """
+  def expecting_message(_expected_cases, :do_else),
+    do: """
+    I was expecting either true or false
+    """
 end

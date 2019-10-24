@@ -55,28 +55,29 @@ defmodule FeatureFlagTest do
 
       FeatureFlag.set({MyApp.C, :math, 1}, :quadruple)
 
-      error = assert_raise(FeatureFlag.MatchError, fn ->
-        MyApp.C.math(2)
-              end)
+      error =
+        assert_raise(FeatureFlag.MatchError, fn ->
+          MyApp.C.math(2)
+        end)
 
       assert error.message == """
 
 
-      I couldn't match on the feature flag value for FeatureFlagTest.MyApp.C.math/1
+             I couldn't match on the feature flag value for FeatureFlagTest.MyApp.C.math/1
 
-      I was expecting a value that'd match in the following cases:
+             I was expecting a value that'd match in the following cases:
 
-        :double ->
-          ..
+               :double ->
+                 ..
 
-        :half ->
-          ..
+               :half ->
+                 ..
 
-        :mod_5 ->
-          ..
+               :mod_5 ->
+                 ..
 
-      but instead got: :quadruple
-      """
+             but instead got: :quadruple
+             """
     end
 
     test "should raise a specialized error specific to the do/else case when it is used" do
@@ -92,19 +93,38 @@ defmodule FeatureFlagTest do
 
       FeatureFlag.set({MyApp.D, :maybe_reverse_string, 1}, nil)
 
-      error = assert_raise(FeatureFlag.MatchError, fn ->
-        MyApp.D.maybe_reverse_string("hello")
-      end)
+      error =
+        assert_raise(FeatureFlag.MatchError, fn ->
+          MyApp.D.maybe_reverse_string("hello")
+        end)
 
       assert error.message == """
 
 
-      I couldn't match on the feature flag value for FeatureFlagTest.MyApp.D.maybe_reverse_string/1
+             I couldn't match on the feature flag value for FeatureFlagTest.MyApp.D.maybe_reverse_string/1
 
-      I was expecting either true or false
+             I was expecting either true or false
 
-      but instead got: nil
-      """
+             but instead got: nil
+             """
+    end
+
+    test "should allow for guard clauses" do
+      defmodule MyApp.E do
+        use FeatureFlag
+
+        def math(value) when is_number(value), feature_flag do
+          :double -> {:ok, 2 * value}
+          :half -> {:ok, value / 2}
+          :mod_5 -> {:ok, rem(value, 5)}
+        end
+
+        def math(_), do: :error
+      end
+
+      FeatureFlag.set({MyApp.E, :math, 1}, :double)
+      assert MyApp.E.math(2) == {:ok, 4}
+      assert MyApp.E.math("2") == :error
     end
   end
 end
