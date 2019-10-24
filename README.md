@@ -103,4 +103,9 @@ The first block will get called if `Application.fetch_env!(FeatureFlag, {MyApp, 
 
 ## Mentions
 
-I'd like to thank [Packlane](https://github.com/Packlane) for giving me time to work on and share this software.
+I'd like to thank the following people who contributed to this project either via code and/or good ideas:
+- [@evuez](https://github.com/evuez)
+- [@zph](https://github.com/zph)
+
+I'd also like to thank [@Packlane](https://github.com/Packlane) for giving me time to work on and share this software.
+
