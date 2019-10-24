@@ -3,7 +3,9 @@ defmodule FeatureFlagTest do
 
   describe "def/3" do
     test "should allow for a mutli-case definition" do
-      FeatureFlag.set({FeatureFlagTest.MyApp.A, :math, 1}, :double)
+      init_flags(%{
+        {FeatureFlagTest.MyApp.A, :math, 1} => :double
+      })
 
       defmodule MyApp.A do
         use FeatureFlag
@@ -27,7 +29,9 @@ defmodule FeatureFlagTest do
     end
 
     test "should allow for a do/else definition" do
-      FeatureFlag.set({FeatureFlagTest.MyApp.B, :maybe_reverse_string, 1}, true)
+      init_flags(%{
+        {FeatureFlagTest.MyApp.B, :maybe_reverse_string, 1} => true
+      })
 
       defmodule MyApp.B do
         use FeatureFlag
@@ -46,7 +50,9 @@ defmodule FeatureFlagTest do
     end
 
     test "should raise a helpful error when feature flag's value isn't matched on" do
-      FeatureFlag.set({FeatureFlagTest.MyApp.C, :math, 1}, :quadruple)
+      init_flags(%{
+        {FeatureFlagTest.MyApp.C, :math, 1} => :quadruple
+      })
 
       defmodule MyApp.C do
         use FeatureFlag
@@ -84,7 +90,9 @@ defmodule FeatureFlagTest do
     end
 
     test "should raise a specialized error specific to the do/else case when it is used" do
-      FeatureFlag.set({FeatureFlagTest.MyApp.D, :maybe_reverse_string, 1}, nil)
+      init_flags(%{
+        {FeatureFlagTest.MyApp.D, :maybe_reverse_string, 1} => nil
+      })
 
       defmodule MyApp.D do
         use FeatureFlag
@@ -113,7 +121,9 @@ defmodule FeatureFlagTest do
     end
 
     test "should allow for guard clauses" do
-      FeatureFlag.set({FeatureFlagTest.MyApp.E, :math, 1}, :double)
+      init_flags(%{
+        {FeatureFlagTest.MyApp.E, :math, 1} => :double
+      })
 
       defmodule MyApp.E do
         use FeatureFlag
@@ -168,7 +178,9 @@ defmodule FeatureFlagTest do
     end
 
     test "should raise a helpful compile error if the body of the function isn't valid" do
-      FeatureFlag.set({FeatureFlagTest.MyApp.F, :math, 1}, :divide)
+      init_flags(%{
+        {FeatureFlagTest.MyApp.F, :math, 1} => :divide
+      })
 
       error =
         assert_raise(CompileError, fn ->
@@ -225,7 +237,7 @@ defmodule FeatureFlagTest do
 
              You can set the feature flag configuration for this particular function by adding the following to your config:
 
-                 config FeatureFlag, {FeatureFlagTest.MyApp.G, :math, 1}, :flag_value
+                 config FeatureFlag, :flags, %{{FeatureFlagTest.MyApp.G, :math, 1} => :flag_value}
 
 
              The value can also be set via outside of a config file via `FeatureFlag.set/2`, like:
@@ -233,5 +245,9 @@ defmodule FeatureFlagTest do
                  FeatureFlag.set({FeatureFlagTest.MyApp.G, :math, 1}, :flag_value)
              """
     end
+  end
+
+  defp init_flags(flags) do
+    Application.put_env(FeatureFlag, :flags, flags)
   end
 end

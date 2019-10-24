@@ -1,6 +1,12 @@
 defmodule FeatureFlag.MatchError do
+  @type t :: Exception.t()
+
   defexception [:message]
 
+  @doc """
+  Returns a new FeatureFlag.MatchError.
+  """
+  @spec new(mfa(), String.t(), :case | :do_else, term()) :: t()
   def new({module_name, func_name, arity}, expected_cases, case_type, actual) do
     %__MODULE__{
       message: """
@@ -14,6 +20,7 @@ defmodule FeatureFlag.MatchError do
     }
   end
 
+  @spec expecting_message(String.t(), :case | :do_else) :: String.t()
   def expecting_message(expected_cases, :case),
     do: """
     I was expecting a value that'd match in the following cases:

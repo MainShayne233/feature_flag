@@ -37,6 +37,12 @@ defmodule FeatureFlag do
   Beyond removing a marginal amount of code, `FeatureFlag` provides a consistent interface for defining functions with config-based branching.
   """
 
+  @doc """
+  The function that gets called when `use FeatureFlag` gets called.
+
+  It simply imports the `def/3` macro.
+  """
+  @spec __using__([]) :: Macro.t()
   defmacro __using__(_) do
     quote do
       import FeatureFlag, only: [def: 3]
@@ -60,16 +66,18 @@ defmodule FeatureFlag do
 
   To have this function perform the `:multiply` procedure, you'd set the feature flag config value like so:
 
-     config FeatureFlag, {MyApp, :math, 2}, :multiply
+     config FeatureFlag, :flags, %{{MyApp, :math, 2} => :multiply}
 
   Or you can use `FeatureFlag.set/2`
 
       FeatureFlag.set({MyApp, :math, 2}, :multiply)
   """
+  @spec def(func :: Macro.t(), feature_flag :: Macro.t(), expression :: Macro.t()) ::
+          Macro.t() | no_return()
   defmacro def(func, {:feature_flag, _, _}, expr) do
     {function_name, _, params} = with {:when, _, [head | _]} <- func, do: head
     mfa = {__CALLER__.module, function_name, length(params)}
-    ensure_configuration_is_set!(mfa)
+    :ok = ensure_configuration_is_set!(mfa)
 
     do_def(mfa, func, expr)
   end
@@ -81,7 +89,7 @@ defmodule FeatureFlag do
   """
   @spec get(mfa()) :: term()
   def get(mfa) do
-    Application.fetch_env!(__MODULE__, mfa)
+    Map.fetch!(get_flags!(), mfa)
   end
 
   @doc """
@@ -89,10 +97,15 @@ defmodule FeatureFlag do
   """
   @spec set(mfa(), term()) :: :ok
   def set(mfa, value) do
-    Application.put_env(__MODULE__, mfa, value)
+    updated_flags = %{get_flags!() | mfa => value}
+    Application.put_env(__MODULE__, :flags, updated_flags)
     :ok
   end
 
+  @spec get_flags! :: map() | no_return()
+  defp get_flags!, do: Application.fetch_env!(__MODULE__, :flags)
+
+  @spec do_def(mfa(), Macro.t(), Macro.t()) :: Macro.t()
   defp do_def(mfa, func, expr) do
     {case_block, case_type} = case_block(expr)
 
@@ -119,6 +132,7 @@ defmodule FeatureFlag do
     end
   end
 
+  @spec case_block(Keyword.t()) :: {Macro.t(), :case | :do_else} | no_return()
   defp case_block(do: [{:->, _, _} | _] = case_block), do: {case_block, :case}
 
   defp case_block(do: do_block, else: else_block) do
@@ -133,12 +147,13 @@ defmodule FeatureFlag do
 
   defp case_block(_), do: raise_compile_error("body")
 
+  @spec ensure_configuration_is_set!(mfa()) :: :ok | no_return()
   defp ensure_configuration_is_set!({module, func, arity} = mfa) do
-    case Application.fetch_env(FeatureFlag, mfa) do
-      {:ok, _} ->
+    case Application.fetch_env(FeatureFlag, :flags) do
+      {:ok, %{^mfa => _}} ->
         :ok
 
-      :error ->
+      _ ->
         raise CompileError,
           description: """
 
@@ -149,7 +164,7 @@ defmodule FeatureFlag do
 
           You can set the feature flag configuration for this particular function by adding the following to your config:
 
-              config FeatureFlag, #{inspect(mfa)}, :flag_value
+              config FeatureFlag, :flags, %{#{inspect(mfa)} => :flag_value}
 
 
           The value can also be set via outside of a config file via `FeatureFlag.set/2`, like:
@@ -159,6 +174,7 @@ defmodule FeatureFlag do
     end
   end
 
+  @spec raise_compile_error(String.t()) :: no_return()
   defp raise_compile_error(part_of_function) do
     raise CompileError,
       description: """

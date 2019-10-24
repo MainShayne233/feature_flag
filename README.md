@@ -40,7 +40,7 @@ defmodule MyApp do
 end
 ```
 
-When called, each case will attempt to match on the current value of `Application.fetch_env!(:feature_flag, {MyApp, :math, 2})`.
+When called, each case will attempt to match on the current value of `Application.fetch_env!(:feature_flag, :flags)[{MyApp, :math, 2}])`.
 
 Beyond removing a marginal amount of code, `FeatureFlag` provides a consistent interface for defining functions with config-based branching.
 
@@ -78,7 +78,7 @@ The function `MyApp.get/1` will perform different procedures depending on a conf
 
 ```elixir
 # config/{dev,test,prod}.exs
-config FeatureFlag, {MyApp, :get, 1}, :cache
+config FeatureFlag, :flags, %{{MyApp, :get, 1} => :cache}
 ```
 
 or, you can set/change this value at runtime via:
