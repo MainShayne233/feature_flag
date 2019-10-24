@@ -4,7 +4,7 @@ defmodule FeatureFlag.MixProject do
   def project do
     [
       app: :feature_flag,
-      version: "0.0.4",
+      version: "0.1.0",
       elixir: ">= 1.9.0",
       deps: deps(),
       description: description(),
