@@ -9,7 +9,7 @@ In other words, you can change what a function does at runtime by setting/modify
 
 ## Use Case
 
-The goal of this library was to provide an elegant mechanism for changing what a function does depending on a value that can easily be modified (i.e. a configuration value).
+The goal of this library was to provide an elegant and consistent mechanism for changing what a function does depending on a value that can easily be modified (i.e. a configuration value).
 
 This could very easily be done in plain Elixir via a simple `case` statement:
 
@@ -30,7 +30,7 @@ end
 
 There's nothing wrong with this approach, and really no need to reach for anything else.
 
-The same code can be rewritten as such using `FeatureFlag`
+However, the same code can be rewritten as such using `FeatureFlag`
 
 ```elixir
 def MyApp do
@@ -46,8 +46,9 @@ def MyApp do
 end
 ```
 
-Beyond removing a marginal amount of code, `FeatureFlag` provides a consistent interface for defining functions with config-based branching.
+When called, each case will attempt to match on the current value of `Application.get_env(:feature_flag, {MyApp, :get, 1})`.
 
+Beyond removing a marginal amount of code, `FeatureFlag` provides a consistent interface for defining functions with config-based branching.
 
 ## Usage
 
