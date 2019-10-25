@@ -269,6 +269,42 @@ defmodule FeatureFlagTest do
       FeatureFlag.set({MyApp.H, :do_math, 1}, :double)
       assert MyApp.H.math(2) == 4
     end
+
+    test "should raise helpful compile error if a defp/3 is definied incorrectly" do
+      error =
+        assert_raise(CompileError, fn ->
+          defmodule MyApp.I do
+            use FeatureFlag
+
+            defp math(value), feature do
+              :double -> {:ok, 2 * value}
+              :half -> {:ok, value / 2}
+              :mod_5 -> {:ok, rem(value, 5)}
+            end
+          end
+        end)
+
+      assert error.description == """
+
+
+             It looks like you were trying to use defp/3 to define a feature flag'd function, but the function head isn't quite right.
+
+             The function definition should look something like:
+
+             defp function_name(arg1, arg2), feature_flag do
+               :a -> ...
+               :b -> ...
+             end
+
+             or
+
+             defp function_name(arg1, arg2), feature_flag do
+               ...
+             else
+               ...
+             end
+             """
+    end
   end
 
   defp init_flags(flags) do

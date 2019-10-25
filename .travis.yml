@@ -27,7 +27,7 @@ jobs:
 
     - stage: test
       script:
-        - mix test
+        - mix coveralls.travis
 
     - stage: type check
       script:
