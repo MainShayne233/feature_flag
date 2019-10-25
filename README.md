@@ -1,6 +1,7 @@
 # FeatureFlag
 
 [![Build Status](https://secure.travis-ci.org/MainShayne233/feature_flag.svg?branch=master "Build Status")](http://travis-ci.org/MainShayne233/feature_flag)
+[![Coverage Status](https://coveralls.io/repos/github/MainShayne233/feature_flag/badge.svg?branch=master)](https://coveralls.io/github/MainShayne233/feature_flag?branch=master)
 [![Hex Version](http://img.shields.io/hexpm/v/executor.svg?style=flat)](https://hex.pm/packages/feature_flag)
 
 
