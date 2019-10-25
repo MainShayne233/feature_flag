@@ -33,6 +33,8 @@ However, the same code can be rewritten as such using `FeatureFlag`
 
 ```elixir
 defmodule MyApp do
+  use FeatureFlag
+
   def math(x, y), feature_flag do
     :add -> x + y
     :multiply -> x * y
