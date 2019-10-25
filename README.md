@@ -96,7 +96,7 @@ Add FeatureFlag as a dependency in your `mix.exs` file.
 ```elixir
 def deps do
   [
-    {:feature_flag, "~> 0.1.3"}
+    {:feature_flag, "~> 0.1.4"}
   ]
 end
 ```
@@ -113,7 +113,7 @@ defmodule MyApp
 
     :new_database ->
       get_from_new_database(key)
-      
+
     :get_from_newer_database ->
       get_from_newer_database(key)
   end
