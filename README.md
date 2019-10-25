@@ -4,14 +4,72 @@
 [![Coverage Status](https://coveralls.io/repos/github/MainShayne233/feature_flag/badge.svg?branch=master)](https://coveralls.io/github/MainShayne233/feature_flag?branch=master)
 [![Hex Version](http://img.shields.io/hexpm/v/executor.svg?style=flat)](https://hex.pm/packages/feature_flag)
 
+## The What
 
-`FeatureFlag` provides a macro that allows for conditional branching at the function level via configuration values.
+`FeatureFlag` allows you to write functions that can have their behavior changed by setting/modifying a config value.
 
-In other words, you can change what a function does at runtime by setting/modifying a config value.
+For instance, using `FeatureFlag`, you can define a function like so:
+
+```elixir
+defmodule MyApp do
+  use FeatureFlag
+
+  def math(x, y), feature_flag do
+    :add -> x + y
+    :multiply -> x * y
+    :subtract -> x - y
+  end
+end
+```
+
+This function will do one of three things depending on its feature flag value. You must set this value in your config like:
+
+```elixir
+config FeatureFlag, :flags, %{
+  # the key here is {module_name, function_name, arity}
+  {MyApp, :add, 2} => :add
+}
+```
+
+At this point, the function would behave like so:
+
+```elixir
+iex> MyApp.math(3, 4)
+7
+```
+
+At runtime, you can change feature flag value using `FeatureFlag.set/2`, like so:
+
+```
+FeatureFlag.set({MyApp, :add, 2}, :multiply)
+```
+
+And now the function would behave like so:
+
+```elixir
+iex> MyApp.math(3, 4)
+12
+```
+
+### Boolean feature flags
+
+If a function's feature flag will only ever be `true` or `false`, you can definie your function like so:
+
+```elixir
+defmodule MyApp do
+  use FeatureFlag
+
+  def get(key), feature_flag do
+    get_from_cache(key)
+  else
+    get_from_db(key)
+  end
+end
+```
 
 ## Use Case
 
-The goal of this library was to provide an elegant and consistent mechanism for changing what a function does depending on a value that can easily be modified (i.e. a configuration value).
+The goal of this library is to ~~make Elixir less pure~~ provide an elegant and consistent mechanism for changing what a function does depending on a value that can easily be modified (i.e. a configuration value).
 
 This could very easily be done in plain Elixir via a simple `case` statement:
 
@@ -29,23 +87,7 @@ end
 
 There's nothing wrong with this approach, and really no need to reach for anything else.
 
-However, the same code can be rewritten as such using `FeatureFlag`
-
-```elixir
-defmodule MyApp do
-  use FeatureFlag
-
-  def math(x, y), feature_flag do
-    :add -> x + y
-    :multiply -> x * y
-    :subtract x - y
-  end
-end
-```
-
-When called, each case will attempt to match on the current value of `Application.fetch_env!(:feature_flag, :flags)[{MyApp, :math, 2}])`.
-
-Beyond removing a marginal amount of code, `FeatureFlag` provides a consistent interface for defining functions with config-based branching.
+However, beyond removing a marginal amount of code, `FeatureFlag` provides a consistent interface for defining functions with this config-based branching.
 
 ## Usage
 
@@ -59,50 +101,40 @@ def deps do
 end
 ```
 
-After that's done, run `mix deps.get`, and then you can define a feature flag'd function!
-
-Here's a simple example:
+Run `mix deps.get`, then define your function:
 
 ```elixir
 defmodule MyApp
   use FeatureFlag
 
   def get(key), feature_flag do
-    :cache ->
-      get_from_cache(key)
+    :old_database ->
+      get_from_old_database(key)
 
-    :database ->
-      get_from_database(key)
+    :new_database ->
+      get_from_new_database(key)
+      
+    :get_from_newer_database ->
+      get_from_newer_database(key)
   end
 end
 ```
 
-The function `MyApp.get/1` will perform different procedures depending on a config value you can set via:
+If you attempt to compile now, it will fail, because you need to explictly declare the feature flag value for this function in your config:
 
 ```elixir
 # config/{dev,test,prod}.exs
-config FeatureFlag, :flags, %{{MyApp, :get, 1} => :cache}
+
+config FeatureFlag, :flags, %{
+  {MyApp, :get, 1} => :old_database
+}
 ```
 
-or, you can set/change this value at runtime via:
+Then you're done! Initially, this function will simply execute the `:old_database` block. You can change this at runtime by running:
 
 ```elixir
-FeatureFlag.set({MyApp, :get, 1}, :database)
+FeatureFlag.set({MyApp, :get, 1}, :new_database)
 ```
-
-
-If your function is only going to do one of two things based on a boolean feature flag, you can simplify
-your function like so:
-
-```elixir
-def get(key), feature_flag do
-  get_from_cache(key)
-else
-  get_from_database(key)
-end
-```
-
-The first block will get called if `Application.fetch_env!(FeatureFlag, {MyApp, :get, 1}) == true`, and the `else` block will get called if it's `false`.
 
 ## Mentions
 
