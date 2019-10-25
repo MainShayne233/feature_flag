@@ -237,7 +237,7 @@ defmodule FeatureFlagTest do
 
              You can set the feature flag configuration for this particular function by adding the following to your config:
 
-                 config FeatureFlag, :flags, %{{FeatureFlagTest.MyApp.G, :math, 1} => :flag_value}
+                 config :feature_flag, :flags, %{{FeatureFlagTest.MyApp.G, :math, 1} => :flag_value}
 
 
              The value can also be set outside of a config file via `FeatureFlag.set/2`, like:
@@ -308,6 +308,6 @@ defmodule FeatureFlagTest do
   end
 
   defp init_flags(flags) do
-    Application.put_env(FeatureFlag, :flags, flags)
+    Application.put_env(:feature_flag, :flags, flags)
   end
 end

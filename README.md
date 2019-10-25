@@ -25,7 +25,7 @@ end
 This function will do one of three things depending on its feature flag value. You must set this value in your config like:
 
 ```elixir
-config FeatureFlag, :flags, %{
+config :feature_flag, :flags, %{
   # the key here is {module_name, function_name, arity}
   {MyApp, :add, 2} => :add
 }
@@ -125,7 +125,7 @@ If you attempt to compile now, it will fail, because you need to explictly decla
 ```elixir
 # config/{dev,test,prod}.exs
 
-config FeatureFlag, :flags, %{
+config :feature_flag, :flags, %{
   {MyApp, :get, 1} => :old_database
 }
 ```

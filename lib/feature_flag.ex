@@ -98,7 +98,7 @@ defmodule FeatureFlag do
 
   To have this function perform the `:multiply` procedure, you'd set the feature flag config value like so:
 
-     config FeatureFlag, :flags, %{{MyApp, :math, 2} => :multiply}
+     config :feature_flag, :flags, %{{MyApp, :math, 2} => :multiply}
 
   Or you can use `FeatureFlag.set/2`
 
@@ -155,12 +155,12 @@ defmodule FeatureFlag do
   @spec set(mfa(), term()) :: :ok
   def set(mfa, value) do
     updated_flags = %{get_flags!() | mfa => value}
-    Application.put_env(__MODULE__, :flags, updated_flags)
+    Application.put_env(:feature_flag, :flags, updated_flags)
     :ok
   end
 
   @spec get_flags! :: map() | no_return()
-  defp get_flags!, do: Application.fetch_env!(__MODULE__, :flags)
+  defp get_flags!, do: Application.fetch_env!(:feature_flag, :flags)
 
   @spec define(Definition.t()) :: Macro.t()
   defp define(
@@ -206,7 +206,7 @@ defmodule FeatureFlag do
 
   @spec ensure_configuration_is_set!(Definition.t()) :: :ok | no_return()
   defp ensure_configuration_is_set!(%Definition{mfa: mfa} = definition) do
-    case Application.fetch_env(FeatureFlag, :flags) do
+    case Application.fetch_env(:feature_flag, :flags) do
       {:ok, %{^mfa => _}} ->
         :ok
 
@@ -223,7 +223,7 @@ defmodule FeatureFlag do
 
           You can set the feature flag configuration for this particular function by adding the following to your config:
 
-              config FeatureFlag, :flags, %{#{inspect(mfa)} => :flag_value}
+              config :feature_flag, :flags, %{#{inspect(mfa)} => :flag_value}
 
 
           The value can also be set outside of a config file via `FeatureFlag.set/2`, like:
