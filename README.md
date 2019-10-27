@@ -40,8 +40,9 @@ iex> MyApp.math(3, 4)
 
 At runtime, you can change feature flag value using `FeatureFlag.set/2`, like so:
 
-```
-FeatureFlag.set({MyApp, :add, 2}, :multiply)
+```elixir
+iex> FeatureFlag.set({MyApp, :add, 2}, :multiply)
+:ok
 ```
 
 And now the function would behave like so:
