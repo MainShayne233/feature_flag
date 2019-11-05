@@ -4,7 +4,7 @@ defmodule FeatureFlag.MixProject do
   def project do
     [
       app: :feature_flag,
-      version: "0.1.4",
+      version: "0.1.5",
       elixir: ">= 1.9.0",
       deps: deps(),
       description: description(),
@@ -20,9 +20,7 @@ defmodule FeatureFlag.MixProject do
     ]
   end
 
-  defp description,
-    do:
-      "A succinct and consistent interface for defining control-flow of functions via configuration."
+  defp description, do: "Change what Elixir functions do via configuration values"
 
   defp package do
     [
